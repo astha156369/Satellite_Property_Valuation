@@ -1,0 +1,21 @@
+# --- .gitignore ---
+
+# 1. Ignore Data Sets (Too Large)
+*.csv
+*.xlsx
+/images/
+/data/
+
+# 2. Ignore Python System Files
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# 3. Ignore Virtual Environments
+.env
+.venv
+env/
+venv/
+
+# 4. Exceptions (Files we WANT to keep)
+!Final_Submission.csv
