@@ -23,12 +23,12 @@ A multimodal machine learning project that predicts property prices by combining
 This project implements an end-to-end machine learning pipeline for property valuation that:
 
 1. **Downloads satellite images** for properties using their geographic coordinates via the Mapbox API
-2. **Extracts visual features** from satellite images using EfficientNet-B0 (a pre-trained CNN)
+2. **Extracts visual features** from satellite images using ResNet18 (a pre-trained CNN)
 3. **Processes tabular data** including property attributes (bedrooms, bathrooms, square footage, etc.) and geographic features
-4. **Trains multimodal models** that fuse visual and tabular features using deep neural networks
-5. **Ensembles predictions** from XGBoost and neural network models for improved accuracy
+4. **Trains multimodal models** using residual learning: XGBoost baseline + Visual Corrector (Ridge Regression)
+5. **Generates final predictions** by combining statistical baseline with visual corrections
 
-The final model achieves an R² score of 0.892 and a Mean Absolute Error (MAE) of approximately $61,745 on property price predictions.
+The final residual ensemble model achieves an R² score of 0.8848 and an RMSE of $115,570 on property price predictions.
 
 ## Why the Project is Useful
 
@@ -41,11 +41,11 @@ The final model achieves an R² score of 0.892 and a Mean Absolute Error (MAE) o
 ## Key Features
 
 - 🛰️ **Satellite Image Integration**: Automated download and processing of satellite imagery via Mapbox API
-- 🧠 **Deep Learning**: CNN-based visual feature extraction using EfficientNet-B0
-- 🔗 **Multimodal Fusion**: Neural network architecture that combines visual and tabular features
-- 📊 **Feature Engineering**: Geographic clustering, distance calculations, and derived features
-- 🎯 **Model Ensembling**: Optimal blending of XGBoost and neural network predictions
-- 📈 **Comprehensive Analysis**: SHAP explanations, model visualization, and performance metrics
+- 🧠 **Deep Learning**: CNN-based visual feature extraction using ResNet18
+- 🔗 **Residual Learning**: Ridge Regression-based visual corrector that learns to adjust XGBoost baseline predictions
+- 📊 **Feature Engineering**: Geographic clustering, Fourier features for spatial coordinates, and derived features
+- 🎯 **Residual Ensemble**: XGBoost baseline + Visual Corrector for improved accuracy
+- 📈 **Comprehensive Analysis**: SHAP explanations, Grad-CAM visualizations, and performance metrics
 
 ## Getting Started
 
@@ -162,13 +162,20 @@ Train the fusion model combining visual and tabular features:
 jupyter notebook notebooks/multimodal_model.ipynb
 ```
 
-#### 5. Model Refinement and Analysis
+#### 5. Model Refinement and Final Predictions
 
-For hyperparameter tuning and model explanation:
+For hyperparameter tuning, residual ensemble training, and final predictions:
 
 ```bash
 jupyter notebook notebooks/04_Model_Refinement_And_Explanation.ipynb
 ```
+
+This notebook:
+- Performs hyperparameter optimization using Optuna
+- Trains the residual ensemble model (XGBoost baseline + Ridge Regression visual corrector)
+- Generates final predictions saved to `results/23118016_final.csv`
+- Creates SHAP explanations and Grad-CAM visualizations
+- Includes an interactive Gradio app for property valuation
 
 ## Project Structure
 
@@ -204,48 +211,65 @@ The project follows this workflow:
 
 1. **Data Collection**: Download satellite images using property coordinates
 2. **Preprocessing**: Clean data, engineer features, create geographic clusters
-3. **Feature Extraction**: Use EfficientNet-B0 to extract 512-dimensional visual features
-4. **Model Training**: Train multimodal neural network fusing visual and tabular features
-5. **Ensembling**: Combine XGBoost and neural network predictions
-6. **Evaluation**: Assess model performance and generate predictions
+3. **Feature Extraction**: Use ResNet18 to extract 512-dimensional visual features
+4. **Baseline Training**: Train XGBoost model on tabular features
+5. **Residual Learning**: Train Ridge Regression visual corrector on XGBoost residuals
+6. **Final Prediction**: Combine XGBoost baseline with visual corrections
+7. **Evaluation**: Assess model performance, generate predictions, and create visualizations
 
 ## Model Architecture
 
 ### Visual Feature Extraction
-- **Backbone**: EfficientNet-B0 (pre-trained on ImageNet)
+- **Backbone**: ResNet18 (pre-trained on ImageNet)
 - **Output**: 512-dimensional feature vectors
 - **Input**: 224×224 RGB satellite images
 
-### Multimodal Fusion Network
+### Baseline Model (XGBoost)
+- **Input Features**:
+  - Continuous features (bedrooms, bathrooms, square footage, age, sqft_per_room, etc.)
+  - Geographic coordinates (lat, long)
+  - Geographic cluster IDs
+- **Model**: XGBoost Regressor with hyperparameter tuning
+- **Output**: Baseline log-price predictions
+
+### Residual Learning Architecture
+- **Strategy**: Residual ensemble approach
+- **Step 1**: Train XGBoost on tabular features to get baseline predictions
+- **Step 2**: Calculate residuals (actual - XGBoost predictions) in log space
+- **Step 3**: Train Ridge Regression visual corrector on visual features to predict residuals
+- **Step 4**: Final prediction = XGBoost baseline + Visual correction
+
+### Fourier Fusion Network (Alternative Architecture)
 - **Inputs**:
   - Continuous features (bedrooms, bathrooms, square footage, etc.)
-  - Categorical features (geographic cluster ID)
+  - Geographic coordinates with Fourier features (sin/cos projections)
+  - Categorical features (geographic cluster ID embeddings)
   - Visual features (512-dim CNN embeddings)
-- **Architecture**: Residual fusion network with:
-  - Embedding layer for categorical features
-  - Fully connected layers for continuous features
-  - Feature fusion and residual connections
-  - Output layer for price prediction
-
-### Ensemble Strategy
-- **XGBoost**: Trained on tabular features only
-- **Neural Network**: Trained on multimodal features
-- **Optimal Blend**: 85% XGBoost + 15% Neural Network (weighted average)
+- **Architecture**: Neural network with Fourier feature engineering for spatial coordinates
 
 ## Results
 
-The final ensemble model achieves:
+The final residual ensemble model (champion) achieves:
 
-- **R² Score**: 0.892
-- **Mean Absolute Error (MAE)**: $61,744.70
-- **Neural Network R²**: 0.846
-- **XGBoost R²**: 0.891
+- **R² Score**: 0.8848
+- **Root Mean Squared Error (RMSE)**: $115,570
+- **Status**: CHAMPION (outperforms baseline models)
+
+### Model Comparison
+
+| Model Architecture | Input Data | R² Score | RMSE ($) | Status |
+|-------------------|------------|----------|----------|--------|
+| **Residual Ensemble (Champion)** | Tabular + Visual Errors | **0.8848** | **$115,570** | **CHAMPION** |
+| XGBoost (Tabular Only) | Tabular Only | 0.8815 | $117,180 | Strong Baseline |
+| Neural Network (Multimodal) | Images + Tabular | 0.8556 | $129,394 | Underperformer |
+
+The residual ensemble approach successfully captures visual value signals that the statistical model cannot detect, improving prediction accuracy by correcting systematic biases in the baseline model.
 
 ### Output Files
 
 The final predictions are saved in the `results/` folder:
 
-- **Final Predictions**: `results/23118016_final.csv` - Contains the final property price predictions generated by the ensemble model
+- **Final Predictions**: `results/23118016_final.csv` - Contains the final property price predictions generated by the residual ensemble model
 
 ## Getting Help
 
