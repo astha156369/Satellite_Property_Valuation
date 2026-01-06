@@ -56,7 +56,7 @@ Traditional property valuation models rely heavily on structured attributes (squ
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/astha156369/satellite-property-valuation.git
+   git clone https://github.com/astha156369/Satellite_Property_Valuation
    cd satellite-property-valuation
    ```
 
@@ -304,26 +304,6 @@ We welcome contributions! To get started:
 | **Missing satellite images** | Check `logs/download_errors.log` for API failures; verify Mapbox API key |
 | **Model weights not found** | Ensure `notebooks/` folder is in the same directory; check file paths |
 
----
-
-## License
-
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
-
----
-
-## Citation
-
-If you use M-REVS in your research or application, please cite:
-
-```bibtex
-@project{mrevs2024,
-  title={M-REVS: Multimodal Real Estate Valuation System},
-  author={Pokhariya, Astha},
-  year={2024},
-  url={https://github.com/astha156369/satellite-property-valuation}
-}
-```
 
 ---
 
